@@ -1,7 +1,14 @@
 <script lang="ts">
-	import { Badge, Button, Card, Label, Select } from 'flowbite-svelte';
+	import { Badge, Button, Card, Label, Select, Spinner } from 'flowbite-svelte';
 	import { PlusOutline, ShoppingBagOutline, TrashBinOutline } from 'flowbite-svelte-icons';
+	import { untrack } from 'svelte';
+	import { flip } from 'svelte/animate';
+	import { cubicOut } from 'svelte/easing';
+	import { tweened } from 'svelte/motion';
+	import { fade, fly } from 'svelte/transition';
 
+	import { addToast } from '$lib/stores/toast.svelte.js';
+	import { calculateOrderTotal } from '$types/Effect.js';
 	import type { Customer, Order, Product } from '$types/Schema';
 
 	interface Properties {
@@ -14,6 +21,19 @@
 	const { order, customers, products, action }: Properties = $props();
 
 	let selectedProductId = $state<number | undefined>();
+	let isSubmitting = $state(false);
+
+	const animatedTotal = tweened(
+		untrack(() => order.totalAmount),
+		{
+			duration: 400,
+			easing: cubicOut
+		}
+	);
+
+	$effect(() => {
+		animatedTotal.set(order.totalAmount);
+	});
 
 	function getProduct(productId: number): Product | undefined {
 		return products.find((p) => p.id === productId);
@@ -53,14 +73,25 @@
 	}
 
 	function recalculateTotal() {
-		order.totalAmount = order.products.reduce(
-			(sum, item) => sum + item.unitPrice * item.quantity,
-			0
-		);
+		order.totalAmount = calculateOrderTotal(order);
 	}
 
 	function formatCurrency(amount: number): string {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+	}
+
+	async function handleSubmit() {
+		if (!action) return;
+
+		isSubmitting = true;
+		try {
+			await action(order);
+			addToast('success', 'Order submitted successfully!');
+		} catch {
+			addToast('error', 'Failed to submit order. Please try again.');
+		} finally {
+			isSubmitting = false;
+		}
 	}
 
 	const availableProducts = $derived(
@@ -134,10 +165,13 @@
 			</div>
 		{:else}
 			<div class="space-y-3">
-				{#each order.products as item, index}
+				{#each order.products as item, index (item.productId)}
 					{@const product = getProduct(item.productId)}
 					<div
-						class="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-600 dark:bg-gray-700"
+						class="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:hover:border-blue-500"
+						in:fly={{ x: -20, duration: 300 }}
+						out:fade={{ duration: 200 }}
+						animate:flip={{ duration: 300 }}
 					>
 						<div class="flex-1">
 							<p class="font-medium text-gray-900 dark:text-white">
@@ -150,7 +184,7 @@
 
 						<div class="flex items-center gap-2">
 							<button
-								class="flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+								class="flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 active:scale-95 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
 								onclick={() => updateQuantity(index, item.quantity - 1)}
 							>
 								-
@@ -159,7 +193,7 @@
 								{item.quantity}
 							</span>
 							<button
-								class="flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
+								class="flex h-8 w-8 items-center justify-center rounded bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 active:scale-95 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
 								onclick={() => updateQuantity(index, item.quantity + 1)}
 							>
 								+
@@ -173,7 +207,7 @@
 						</div>
 
 						<button
-							class="rounded p-2 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
+							class="rounded p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 active:scale-95 dark:hover:bg-red-900/20"
 							onclick={() => removeProduct(index)}
 						>
 							<TrashBinOutline class="h-5 w-5" />
@@ -188,26 +222,31 @@
 	<div class="border-t border-gray-200 pt-4 dark:border-gray-700">
 		<div class="mb-6 flex items-center justify-between">
 			<span class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total Amount</span>
-			<span class="text-primary-600 dark:text-primary-400 text-2xl font-bold">
-				{formatCurrency(order.totalAmount)}
+			<span class="text-primary-600 dark:text-primary-400 text-2xl font-bold tabular-nums">
+				{formatCurrency($animatedTotal)}
 			</span>
 		</div>
 
 		<!-- Submit Button -->
 		{#if action}
 			<Button
-				class="w-full"
+				class="w-full active:scale-[0.98]"
 				color="blue"
-				disabled={order.products.length === 0 || !order.customerId}
-				onclick={() => action(order)}
+				disabled={order.products.length === 0 || !order.customerId || isSubmitting}
+				onclick={handleSubmit}
 				size="lg"
 			>
-				<ShoppingBagOutline class="mr-2 h-5 w-5" />
-				Submit Order
+				{#if isSubmitting}
+					<Spinner class="mr-2" size="5" />
+					Submitting...
+				{:else}
+					<ShoppingBagOutline class="mr-2 h-5 w-5" />
+					Submit Order
+				{/if}
 			</Button>
 		{:else}
 			<Button
-				class="w-full"
+				class="w-full active:scale-[0.98]"
 				color="blue"
 				disabled={order.products.length === 0 || !order.customerId}
 				size="lg"

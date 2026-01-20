@@ -15,7 +15,7 @@ export type Product = z.infer<typeof ProductSchema>;
 
 export const OrderDetailsSchema = z.object({
 	productId: z.number().int(),
-	unitPrice: z.number().int(),
+	unitPrice: z.number().min(0),
 	quantity: z.number().int().min(1)
 });
 export type OrderDetails = z.infer<typeof OrderDetailsSchema>;

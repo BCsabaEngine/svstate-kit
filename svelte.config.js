@@ -10,7 +10,7 @@ const config = {
 	},
 	kit: {
 		adapter: adapter({
-			precompress: false,
+			precompress: true,
 			polyfill: false
 		}),
 		alias: {

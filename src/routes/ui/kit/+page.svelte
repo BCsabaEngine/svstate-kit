@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createSvState } from 'svstate';
 
+	import DemoHeader from '$components/DemoHeader.svelte';
 	import OrderEditor from '$components/OrderEditor.svelte';
 	import { orderEffect } from '$types/Effect.js';
 
@@ -11,6 +12,8 @@
 		effect: ({ target, property }) => orderEffect(target, property)
 	});
 </script>
+
+<DemoHeader badge="SvelteKit" badgeColor="green" title="SvelteKit Default" />
 
 <form method="POST">
 	<OrderEditor customers={data.customers} order={reactiveOrder} products={data.products} />

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createSvState } from 'svstate';
 
+	import DemoHeader from '$components/DemoHeader.svelte';
 	import OrderEditor from '$components/OrderEditor.svelte';
 	import { apiClient } from '$lib/trpc/client.js';
 	import { orderEffect } from '$types/Effect.js';
@@ -15,6 +16,8 @@
 		}
 	});
 </script>
+
+<DemoHeader badge="tRPC Server" badgeColor="purple" title="tRPC Server" />
 
 <OrderEditor
 	action={execute}
