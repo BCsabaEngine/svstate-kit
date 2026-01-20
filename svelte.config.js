@@ -20,9 +20,6 @@ const config = {
 			$routeparams: './src/types/routeparams',
 			$routes: './src/routes',
 			$types: './src/types'
-		},
-		output: {
-			bundleStrategy: 'single'
 		}
 	}
 };

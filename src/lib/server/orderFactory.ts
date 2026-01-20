@@ -8,7 +8,8 @@ export const createDefaultOrder = async (
 	products: [
 		{
 			productId,
-			quantity: 1
+			quantity: 1,
+			unitPrice: 0
 		}
 	],
 	totalAmount: 0

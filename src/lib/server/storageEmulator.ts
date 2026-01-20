@@ -9,12 +9,12 @@ export const getCustomers = async (): Promise<Customer[]> => [
 ];
 
 export const getProducts = async (): Promise<Product[]> => [
-	{ id: 1, title: 'Laptop', price: 999.99 },
-	{ id: 2, title: 'Smartphone', price: 499.99 },
-	{ id: 3, title: 'Headphones', price: 199.99 }
+	{ id: 1, title: 'Laptop', unitPrice: 999.99 },
+	{ id: 2, title: 'Smartphone', unitPrice: 499.99 },
+	{ id: 3, title: 'Headphones', unitPrice: 199.99 }
 ];
 
 export const putOrder = async (order: Order): Promise<void> => {
 	// eslint-disable-next-line no-console
-	console.log('Order received:', order);
+	console.log('Order received into storage', order);
 };

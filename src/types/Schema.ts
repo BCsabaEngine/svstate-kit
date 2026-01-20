@@ -9,12 +9,13 @@ export type Customer = z.infer<typeof CustomerSchema>;
 export const ProductSchema = z.object({
 	id: z.number().int(),
 	title: z.string(),
-	price: z.number().min(0)
+	unitPrice: z.number().min(0)
 });
 export type Product = z.infer<typeof ProductSchema>;
 
 export const OrderDetailsSchema = z.object({
 	productId: z.number().int(),
+	unitPrice: z.number().int(),
 	quantity: z.number().int().min(1)
 });
 export type OrderDetails = z.infer<typeof OrderDetailsSchema>;
