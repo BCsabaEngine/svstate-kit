@@ -7,13 +7,12 @@
 	import DemoHeader from '$components/DemoHeader.svelte';
 	import OrderEditor from '$components/OrderEditor.svelte';
 	import { apiClient } from '$lib/trpc/client.js';
-	import { orderEffect } from '$types/Effect.js';
-	import type { Customer, Order, Product } from '$types/Schema';
+	import { createOrderWithMethods, type OrderWithMethods } from '$types/OrderWithMethods.js';
+	import type { Customer, Product } from '$types/Schema';
 
 	let customers = $state<Customer[]>([]);
 	let products = $state<Product[]>([]);
-	let order: Order;
-	let orderState = $state<{ data: Order; execute: () => Promise<void> } | undefined>();
+	let orderState = $state<{ data: OrderWithMethods; execute: () => Promise<void> } | undefined>();
 	let loading = $state(true);
 
 	onMount(async () => {
@@ -25,10 +24,12 @@
 
 		customers = customersData;
 		products = productsData;
-		order = orderData;
+		const orderWithMethods = createOrderWithMethods(orderData);
 
-		orderState = createSvState(order, {
-			effect: ({ target, property }) => orderEffect(target, property),
+		orderState = createSvState(orderWithMethods, {
+			effect: ({ target, property }) => {
+				if (property !== 'totalAmount') target.calculateTotals();
+			},
 			action: async () => {
 				if (orderState) await apiClient.putOrder.mutate(orderState.data);
 			}
