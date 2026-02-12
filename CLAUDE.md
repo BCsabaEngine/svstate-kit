@@ -27,8 +27,8 @@ npm run format:fix   # Fix Prettier formatting
 
 The tRPC integration follows this structure:
 
-- `src/lib/trpc/init.ts` - tRPC initialization with superjson transformer, exports `createApiRouter`, `apiProcedure`, `mergeRouters`
-- `src/trpcRouter/` - Individual router modules (e.g., `masterData.ts`, `order.ts`)
+- `src/lib/trpc/init.ts` - tRPC initialization with superjson transformer, exports `createApiRouter`, `apiProcedure`, `mergeRouters`, `createCallerFactory`
+- `src/trpcRouter/` - Individual router modules (`masterData.ts`, `order.ts`, `validation.ts`)
 - `src/trpcRouter/index.ts` - Merges all routers into single `router` export
 - `src/lib/trpc/router.ts` - Re-exports merged router and `Router` type
 - `src/lib/trpc/client.ts` - Client-side tRPC client (`apiClient`) for browser use
@@ -40,36 +40,65 @@ The tRPC integration follows this structure:
 
 Configured in `svelte.config.js`:
 
+- `$api` → `./src/api`
 - `$components` → `./src/components`
 - `$lib` → `./src/lib`
-- `$types` → `./src/types`
+- `$routeparams` → `./src/types/routeparams`
 - `$routes` → `./src/routes`
+- `$types` → `./src/types`
 
 ### Schema & Types
 
 - `src/types/Schema.ts` - Zod schemas and TypeScript types for domain objects (Customer, Product, Order, OrderDetails)
 - `src/types/Effect.ts` - Side effect functions for svstate (e.g., `orderEffect` recalculates totals)
+- `src/types/OrderWithMethods.ts` - Order type extended with methods (e.g., `calculateTotals`)
+- `src/types/Validators.ts` - Client-side svstate validators using `numberValidator`, `stringValidator`, `arrayValidator`
 
 ### svstate Integration
 
-The `svstate` library is demonstrated in `/ui/trpc-fetch`:
+The `svstate` library (v1.4.0) is demonstrated in `/ui/trpc-fetch` with the full feature set:
 
 ```typescript
-const state = createSvState(order, {
-	effect: ({ target, property }) => orderEffect(target, property),
-	action: async () => {
-		await apiClient.putOrder.mutate(state.data);
+const result = createSvState(
+	orderWithMethods,
+	{
+		effect: ({ target, property }) => {
+			if (property !== 'totalAmount') target.calculateTotals();
+		},
+		action: async () => {
+			await apiClient.putOrder.mutate(result.data);
+		},
+		validator: (source) => orderValidator(source),
+		asyncValidator: {
+			customerId: async (value, _source, signal) => {
+				return await apiClient.validateCustomer.query({ customerId: value as number }, { signal });
+			},
+			orderReference: async (value, _source, signal) => {
+				return await apiClient.validateOrderReference.query(
+					{ reference: value as string },
+					{ signal }
+				);
+			}
+		}
+	},
+	{
+		debounceAsyncValidation: 500,
+		clearAsyncErrorsOnChange: true
 	}
-});
+);
 ```
+
+Key svstate features demonstrated: effects, sync validators, async validators with debounce, dirty tracking, action state management.
 
 ## Tech Stack
 
 - SvelteKit with Svelte 5 (runes: `$state`, `$derived`, `$props`)
+- svstate v1.4.0 for reactive state management with validation
 - tRPC v11 with superjson
 - Tailwind CSS v4 with Flowbite-Svelte components
-- Zod for schema validation
+- Zod v4 for schema validation
 - Node.js adapter for deployment
+- Node.js >= 22 required
 
 ## Code Style
 

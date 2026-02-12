@@ -1,24 +1,49 @@
 <script lang="ts">
-	import { Badge, Button, Card, Label, Select, Spinner } from 'flowbite-svelte';
+	import { Badge, Button, Card, Input, Label, Select, Spinner } from 'flowbite-svelte';
 	import { PlusOutline, ShoppingBagOutline, TrashBinOutline } from 'flowbite-svelte-icons';
 	import { untrack } from 'svelte';
 	import { flip } from 'svelte/animate';
 	import { cubicOut } from 'svelte/easing';
 	import { tweened } from 'svelte/motion';
 	import { fade, fly } from 'svelte/transition';
+	import type { AsyncErrors, DirtyFields } from 'svstate';
 
 	import { addToast } from '$lib/stores/toast.svelte.js';
 	import { calculateOrderTotal } from '$types/Effect.js';
 	import type { Customer, Order, Product } from '$types/Schema';
+	import type { OrderErrors } from '$types/Validators';
 
 	interface Properties {
 		order: Order;
 		customers: Customer[];
 		products: Product[];
 		action?: (order: Order) => Promise<void>;
+		errors?: OrderErrors | undefined;
+		hasErrors?: boolean;
+		asyncErrors?: AsyncErrors | undefined;
+		asyncValidating?: string[];
+		hasCombinedErrors?: boolean;
+		isDirty?: boolean;
+		isDirtyByField?: DirtyFields | undefined;
+		actionInProgress?: boolean;
+		actionError?: Error | undefined;
 	}
 
-	const { order, customers, products, action }: Properties = $props();
+	const {
+		order,
+		customers,
+		products,
+		action,
+		errors,
+		hasErrors,
+		asyncErrors,
+		asyncValidating,
+		hasCombinedErrors,
+		isDirty,
+		isDirtyByField,
+		actionInProgress,
+		actionError
+	}: Properties = $props();
 
 	let selectedProductId = $state<number | undefined>();
 	let isSubmitting = $state(false);
@@ -97,6 +122,23 @@
 	const availableProducts = $derived(
 		products.filter((p) => !order.products.some((op) => op.productId === p.id))
 	);
+
+	const submitting = $derived(actionInProgress ?? isSubmitting);
+	const submitDisabled = $derived(
+		hasCombinedErrors === undefined
+			? hasErrors === undefined
+				? order.products.length === 0 || !order.customerId || submitting
+				: hasErrors || submitting
+			: hasCombinedErrors || submitting
+	);
+
+	function isFieldDirty(field: string): boolean {
+		return isDirtyByField?.[field] ?? false;
+	}
+
+	function isAsyncValidating(field: string): boolean {
+		return asyncValidating?.includes(field) ?? false;
+	}
 </script>
 
 <Card class="mx-auto mt-4 max-w-2xl p-4" size="xl">
@@ -110,9 +152,38 @@
 		</div>
 	</div>
 
+	<!-- Unsaved Changes Banner -->
+	{#if isDirty}
+		<div
+			class="mb-4 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 dark:border-amber-600 dark:bg-amber-900/20"
+			transition:fly={{ y: -10, duration: 200 }}
+		>
+			<div class="h-2 w-2 rounded-full bg-amber-500"></div>
+			<span class="text-sm font-medium text-amber-700 dark:text-amber-400">Unsaved changes</span>
+		</div>
+	{/if}
+
+	<!-- Action Error Banner -->
+	{#if actionError}
+		<div
+			class="mb-4 rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
+			transition:fly={{ y: -10, duration: 200 }}
+		>
+			{actionError.message}
+		</div>
+	{/if}
+
 	<!-- Customer Selection -->
 	<div class="mb-6">
-		<Label class="mb-2 font-semibold text-gray-700 dark:text-gray-300">Customer</Label>
+		<div class="flex items-center gap-2">
+			<Label class="mb-2 font-semibold text-gray-700 dark:text-gray-300">Customer</Label>
+			{#if isFieldDirty('customerId')}
+				<div class="h-2 w-2 rounded-full bg-amber-500" title="Modified"></div>
+			{/if}
+			{#if isAsyncValidating('customerId')}
+				<Spinner size="4" />
+			{/if}
+		</div>
 		<Select
 			name="customerId"
 			class="mt-1"
@@ -120,16 +191,52 @@
 			placeholder="Select a customer..."
 			bind:value={order.customerId}
 		/>
-		{#if order.customerId}
+		{#if errors?.customerId}
+			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{errors.customerId}</p>
+		{/if}
+		{#if asyncErrors?.['customerId']}
+			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{asyncErrors['customerId']}</p>
+		{/if}
+		{#if order.customerId && !errors?.customerId && !asyncErrors?.['customerId']}
 			<p class="mt-2 text-sm text-green-600 dark:text-green-400">
 				Selected: {getCustomer(order.customerId)?.name}
 			</p>
 		{/if}
 	</div>
 
+	<!-- Order Reference -->
+	<div class="mb-6">
+		<div class="flex items-center gap-2">
+			<Label class="mb-2 font-semibold text-gray-700 dark:text-gray-300">Order Reference</Label>
+			{#if isFieldDirty('orderReference')}
+				<div class="h-2 w-2 rounded-full bg-amber-500" title="Modified"></div>
+			{/if}
+			{#if isAsyncValidating('orderReference')}
+				<Spinner size="4" />
+			{/if}
+		</div>
+		<Input
+			name="orderReference"
+			class="mt-1"
+			placeholder="e.g. ORD123"
+			bind:value={order.orderReference}
+		/>
+		{#if errors?.orderReference}
+			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{errors.orderReference}</p>
+		{/if}
+		{#if asyncErrors?.['orderReference']}
+			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{asyncErrors['orderReference']}</p>
+		{/if}
+	</div>
+
 	<!-- Add Product Section -->
 	<div class="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
-		<Label class="mb-2 font-semibold text-gray-700 dark:text-gray-300">Add Product</Label>
+		<div class="flex items-center gap-2">
+			<Label class="mb-2 font-semibold text-gray-700 dark:text-gray-300">Add Product</Label>
+			{#if isFieldDirty('products')}
+				<div class="h-2 w-2 rounded-full bg-amber-500" title="Modified"></div>
+			{/if}
+		</div>
 		<div class="mt-1 flex gap-2">
 			<Select
 				name="productId"
@@ -146,6 +253,9 @@
 				Add
 			</Button>
 		</div>
+		{#if errors?.products}
+			<p class="mt-1 text-sm text-red-600 dark:text-red-400">{errors.products}</p>
+		{/if}
 	</div>
 
 	<!-- Order Items -->
@@ -232,11 +342,11 @@
 			<Button
 				class="w-full active:scale-[0.98]"
 				color="blue"
-				disabled={order.products.length === 0 || !order.customerId || isSubmitting}
+				disabled={submitDisabled}
 				onclick={handleSubmit}
 				size="lg"
 			>
-				{#if isSubmitting}
+				{#if submitting}
 					<Spinner class="mr-2" size="5" />
 					Submitting...
 				{:else}
@@ -248,7 +358,7 @@
 			<Button
 				class="w-full active:scale-[0.98]"
 				color="blue"
-				disabled={order.products.length === 0 || !order.customerId}
+				disabled={submitDisabled}
 				size="lg"
 				type="submit"
 			>
@@ -257,7 +367,7 @@
 			</Button>
 		{/if}
 
-		{#if order.products.length === 0 || !order.customerId}
+		{#if !action && (order.products.length === 0 || !order.customerId)}
 			<p class="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
 				{#if !order.customerId}
 					Please select a customer

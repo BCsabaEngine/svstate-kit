@@ -1,50 +1,36 @@
 # svstate-kit
 
-**Effortless state management for SvelteKit applications.**
+**Demo project for the [svstate](https://www.npmjs.com/package/svstate) npm package** — a state management library for Svelte 5.
 
 ![svstate-kit demo](main.png)
 
-## Why svstate?
+## About This Demo
 
-Stop wrestling with complex state management. **svstate** gives you reactive, type-safe state that just works.
+This is a companion demo application that showcases how `svstate` integrates with SvelteKit. It demonstrates three different patterns for handling server-side state:
 
-- **Zero boilerplate** — Wrap your data and go
-- **Automatic reactivity** — Changes propagate instantly
-- **Built-in side effects** — Computed values update automatically
-- **Type-safe** — Full TypeScript support out of the box
+| Pattern              | Route             | Description                                                                                        |
+| -------------------- | ----------------- | -------------------------------------------------------------------------------------------------- |
+| **SvelteKit Native** | `/ui/kit`         | Classic form actions with sync validators (`numberValidator`, `stringValidator`, `arrayValidator`) |
+| **tRPC Server**      | `/ui/trpc-server` | Server-side tRPC with sync validators and per-field dirty tracking                                 |
+| **tRPC + svstate**   | `/ui/trpc-fetch`  | Full showcase: sync + async validators, dirty tracking, debounced server-side validation           |
 
-## See It In Action
+## Getting Started
 
-This demo showcases three ways to manage state in SvelteKit:
-
-| Approach             | Best For                     |
-| -------------------- | ---------------------------- |
-| **SvelteKit Native** | Traditional form-based apps  |
-| **tRPC Server**      | Server-rendered pages        |
-| **tRPC + svstate**   | Interactive client-side apps |
-
-## Quick Start
+Requires Node.js >= 22.
 
 ```bash
-npm install svstate
+npm install
+npm run dev
 ```
 
-```typescript
-import { createSvState } from 'svstate';
+## Tech Stack
 
-const state = createSvState(myData, {
-	effect: ({ target }) => recalculate(target),
-	action: async () => await saveToServer(state.data)
-});
-```
+- [SvelteKit](https://svelte.dev/docs/kit) with Svelte 5
+- [svstate](https://www.npmjs.com/package/svstate) v1.4.0 for reactive state management with validation
+- [tRPC](https://trpc.io/) v11 with superjson
+- [Tailwind CSS](https://tailwindcss.com/) v4 with Flowbite-Svelte components
+- [Zod](https://zod.dev/) v4 for schema validation
 
-That's it. Your state is now reactive, tracked, and ready to save.
-
-## Learn More
+## Links
 
 - [svstate on npm](https://www.npmjs.com/package/svstate)
-- [Live Demo](https://svstate-kit.example.com)
-
----
-
-Built with SvelteKit, tRPC, and Tailwind CSS.

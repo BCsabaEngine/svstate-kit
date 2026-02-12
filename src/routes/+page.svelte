@@ -11,27 +11,27 @@
 		{
 			title: 'SvelteKit Default',
 			description:
-				'Classic SvelteKit form actions and load functions. The traditional way to handle server-side state.',
+				'Classic SvelteKit form actions with sync validators. Demonstrates numberValidator, stringValidator, and arrayValidator.',
 			href: '/ui/kit',
-			badge: 'Native',
+			badge: 'Validators',
 			badgeColor: 'green' as const,
 			icon: CodeBranchOutline
 		},
 		{
 			title: 'tRPC Server',
 			description:
-				'Server-side tRPC calls with type-safe procedures. Direct database access from the server.',
+				'Server-side tRPC with sync validators and per-field dirty tracking. Shows isDirty and isDirtyByField indicators.',
 			href: '/ui/trpc-server',
-			badge: 'Server',
+			badge: 'Dirty Tracking',
 			badgeColor: 'blue' as const,
 			icon: ServerOutline
 		},
 		{
 			title: 'tRPC Fetch',
 			description:
-				'Client-side tRPC calls via fetch. Full type safety with client-side data fetching.',
+				'Full showcase: sync + async validators, dirty tracking, hasCombinedErrors, and debounced server-side validation.',
 			href: '/ui/trpc-fetch',
-			badge: 'Client',
+			badge: 'Full Demo',
 			badgeColor: 'purple' as const,
 			icon: GlobeOutline
 		}
@@ -97,7 +97,7 @@
 		<!-- Footer Info -->
 		<div class="mt-16 text-center">
 			<p class="text-sm text-gray-500 dark:text-gray-500">
-				Built with SvelteKit, tRPC, and Flowbite
+				Built with SvelteKit, tRPC, Flowbite, and svstate v1.4.0
 			</p>
 		</div>
 	</div>

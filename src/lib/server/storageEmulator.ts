@@ -18,3 +18,15 @@ export const putOrder = async (order: Order): Promise<void> => {
 	// eslint-disable-next-line no-console
 	console.log('Order received into storage', order);
 };
+
+export const validateCustomerForOrder = async (customerId: number): Promise<string> => {
+	await new Promise((resolve) => setTimeout(resolve, 800));
+	if (customerId === 3) return 'Customer is inactive and cannot place orders';
+	return '';
+};
+
+export const validateOrderReference = async (reference: string): Promise<string> => {
+	await new Promise((resolve) => setTimeout(resolve, 600));
+	if (reference.toUpperCase() === 'ORD001') return 'Order reference is already taken';
+	return '';
+};

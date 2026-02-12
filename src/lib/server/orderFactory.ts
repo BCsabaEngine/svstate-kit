@@ -5,6 +5,7 @@ export const createDefaultOrder = async (
 	productId: number
 ): Promise<Order> => ({
 	customerId,
+	orderReference: '',
 	products: [
 		{
 			productId,

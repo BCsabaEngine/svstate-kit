@@ -1,19 +1,34 @@
 <script lang="ts">
 	import { Card, Skeleton } from 'flowbite-svelte';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { fade } from 'svelte/transition';
-	import { createSvState } from 'svstate';
+	import { type AsyncErrors, createSvState, type DirtyFields } from 'svstate';
 
 	import DemoHeader from '$components/DemoHeader.svelte';
 	import OrderEditor from '$components/OrderEditor.svelte';
 	import { apiClient } from '$lib/trpc/client.js';
 	import { createOrderWithMethods, type OrderWithMethods } from '$types/OrderWithMethods.js';
 	import type { Customer, Product } from '$types/Schema';
+	import { type OrderErrors, orderValidator } from '$types/Validators.js';
 
 	let customers = $state<Customer[]>([]);
 	let products = $state<Product[]>([]);
-	let orderState = $state<{ data: OrderWithMethods; execute: () => Promise<void> } | undefined>();
+	let orderState = $state<{
+		data: OrderWithMethods;
+		execute: () => Promise<void>;
+	}>();
 	let loading = $state(true);
+
+	let errors = $state<OrderErrors | undefined>();
+	let hasErrors = $state(false);
+	let asyncErrors = $state<AsyncErrors>({});
+	let asyncValidating = $state<string[]>([]);
+	let hasCombinedErrors = $state(false);
+	let isDirty = $state(false);
+	let isDirtyByField = $state<DirtyFields>({});
+	let actionInProgress = $state(false);
+	let actionError = $state<Error | undefined>();
 
 	onMount(async () => {
 		const [customersData, productsData, orderData] = await Promise.all([
@@ -26,14 +41,60 @@
 		products = productsData;
 		const orderWithMethods = createOrderWithMethods(orderData);
 
-		orderState = createSvState(orderWithMethods, {
-			effect: ({ target, property }) => {
-				if (property !== 'totalAmount') target.calculateTotals();
+		const result = createSvState(
+			orderWithMethods,
+			{
+				effect: ({ target, property }) => {
+					if (property !== 'totalAmount') target.calculateTotals();
+				},
+				action: async () => {
+					await apiClient.putOrder.mutate(result.data);
+				},
+				validator: (source) => orderValidator(source),
+				asyncValidator: {
+					customerId: async (value, _source, signal) => {
+						const result = await apiClient.validateCustomer.query(
+							{ customerId: value as number },
+							{ signal }
+						);
+						return result;
+					},
+					orderReference: async (value, _source, signal) => {
+						const result = await apiClient.validateOrderReference.query(
+							{ reference: value as string },
+							{ signal }
+						);
+						return result;
+					}
+				}
 			},
-			action: async () => {
-				if (orderState) await apiClient.putOrder.mutate(orderState.data);
+			{
+				debounceAsyncValidation: 500,
+				clearAsyncErrorsOnChange: true
 			}
-		});
+		);
+
+		orderState = result;
+
+		errors = get(result.state.errors);
+		hasErrors = get(result.state.hasErrors);
+		asyncErrors = get(result.state.asyncErrors);
+		asyncValidating = get(result.state.asyncValidating);
+		hasCombinedErrors = get(result.state.hasCombinedErrors);
+		isDirty = get(result.state.isDirty);
+		isDirtyByField = get(result.state.isDirtyByField);
+		actionInProgress = get(result.state.actionInProgress);
+		actionError = get(result.state.actionError);
+
+		result.state.errors.subscribe((v) => (errors = v));
+		result.state.hasErrors.subscribe((v) => (hasErrors = v));
+		result.state.asyncErrors.subscribe((v) => (asyncErrors = v));
+		result.state.asyncValidating.subscribe((v) => (asyncValidating = v));
+		result.state.hasCombinedErrors.subscribe((v) => (hasCombinedErrors = v));
+		result.state.isDirty.subscribe((v) => (isDirty = v));
+		result.state.isDirtyByField.subscribe((v) => (isDirtyByField = v));
+		result.state.actionInProgress.subscribe((v) => (actionInProgress = v));
+		result.state.actionError.subscribe((v) => (actionError = v));
 
 		loading = false;
 	});
@@ -53,6 +114,11 @@
 
 		<div class="mb-6">
 			<Skeleton class="mb-2 h-4 w-20" />
+			<Skeleton class="h-10 w-full" />
+		</div>
+
+		<div class="mb-6">
+			<Skeleton class="mb-2 h-4 w-28" />
 			<Skeleton class="h-10 w-full" />
 		</div>
 
@@ -95,6 +161,20 @@
 	</Card>
 {:else if orderState}
 	<div in:fade={{ duration: 300 }}>
-		<OrderEditor action={orderState.execute} {customers} order={orderState.data} {products} />
+		<OrderEditor
+			action={orderState.execute}
+			{actionError}
+			{actionInProgress}
+			{asyncErrors}
+			{asyncValidating}
+			{customers}
+			{errors}
+			{hasCombinedErrors}
+			{hasErrors}
+			{isDirty}
+			{isDirtyByField}
+			order={orderState.data}
+			{products}
+		/>
 	</div>
 {/if}
