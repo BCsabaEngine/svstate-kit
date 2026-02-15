@@ -24,11 +24,7 @@
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@tailwindcss/postcss": "^4.1.18",
 		"@tailwindcss/typography": "^0.5.19",
-		"@testing-library/svelte": "^5.3.1",
-		"@types/eslint": "^9.6.1",
 		"@types/node": "^25.2.3",
-		"@typescript-eslint/eslint-plugin": "^8.55.0",
-		"@typescript-eslint/parser": "^8.55.0",
 		"eslint": "^9.39.2",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-simple-import-sort": "^12.1.1",
@@ -45,6 +41,7 @@
 		"svelte-check": "^4.3.6",
 		"tailwindcss": "^4.1.18",
 		"typescript": "^5.9.3",
+		"tsx": "^4.21.0",
 		"typescript-eslint": "^8.55.0",
 		"vite": "^7.3.1"
 	},
@@ -56,7 +53,6 @@
 		"nanoid": "^5.1.6",
 		"superjson": "^2.2.6",
 		"svstate": "^1.4.0",
-		"tsx": "^4.21.0",
 		"zod": "^4.3.6"
 	}
 }

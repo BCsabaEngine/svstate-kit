@@ -1,19 +1,12 @@
-import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
-import typescriptEslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import prettierConfig from 'eslint-config-prettier/flat';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import svelte from 'eslint-plugin-svelte';
 import unicorn from 'eslint-plugin-unicorn';
 import globals from 'globals';
 import svelteSslintParser from 'svelte-eslint-parser';
-
-const __dirname = import.meta.dirname;
-const compat = new FlatCompat({
-	baseDirectory: __dirname,
-	recommendedConfig: js.configs.recommended,
-	allConfig: js.configs.all
-});
+import tseslint from 'typescript-eslint';
 
 export default [
 	{
@@ -34,12 +27,13 @@ export default [
 			'**/yarn.lock'
 		]
 	},
-	...compat.extends('eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'),
+	js.configs.recommended,
+	...tseslint.configs.recommended,
 	...svelte.configs.recommended,
 	unicorn.configs.all,
+	prettierConfig,
 	{
 		plugins: {
-			'@typescript-eslint': typescriptEslint,
 			'simple-import-sort': simpleImportSort
 		},
 
@@ -84,8 +78,8 @@ export default [
 
 		languageOptions: {
 			parser: svelteSslintParser,
-			ecmaVersion: 5,
-			sourceType: 'script',
+			ecmaVersion: 2020,
+			sourceType: 'module',
 
 			parserOptions: {
 				parser: '@typescript-eslint/parser'

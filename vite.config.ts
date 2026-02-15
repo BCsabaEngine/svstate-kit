@@ -5,16 +5,11 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	build: {
 		sourcemap: false,
-		minify: true,
-		cssMinify: true,
-		emptyOutDir: true,
-		chunkSizeWarningLimit: 4096,
+		chunkSizeWarningLimit: 1000,
 		rollupOptions: {
-			treeshake: true,
 			output: {
 				compact: true
 			}
 		}
-	},
-	clearScreen: true
+	}
 });

@@ -7,15 +7,12 @@
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
-		"sourceMap": true,
 		"strict": true,
 		"noUncheckedIndexedAccess": false,
 		"exactOptionalPropertyTypes": true,
 		"noPropertyAccessFromIndexSignature": true
 	},
 	"include": [
-		"ambient.d.ts",
-		"non-ambient.d.ts",
 		"./.svelte-kit/types/**/$types.d.ts",
 		"./vite.config.js",
 		"./vite.config.ts",
@@ -25,8 +22,6 @@
 		"./src/**/*.svelte",
 		"./tests/**/*.js",
 		"./tests/**/*.ts",
-		"./tests/**/*.svelte",
-		"./drizzle/**/*.ts",
-		"./tests/**/*.ts"
+		"./tests/**/*.svelte"
 	]
 }

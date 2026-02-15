@@ -217,7 +217,7 @@
 		</div>
 		<Input
 			name="orderReference"
-			class="mt-1"
+			class="mt-1 pl-2"
 			placeholder="e.g. ORD123"
 			bind:value={order.orderReference}
 		/>
