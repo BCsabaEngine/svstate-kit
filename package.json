@@ -1,6 +1,6 @@
 {
 	"name": "svstate-kit",
-	"version": "26.2.12",
+	"version": "26.02.15",
 	"type": "module",
 	"engines": {
 		"node": ">=22"
