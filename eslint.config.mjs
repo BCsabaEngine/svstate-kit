@@ -90,6 +90,13 @@ export default [
 			parserOptions: {
 				parser: '@typescript-eslint/parser'
 			}
+		},
+
+		rules: {
+			curly: ['error', 'multi'],
+			'no-alert': 'error',
+			'no-console': 'error',
+			'no-debugger': 'error'
 		}
 	}
 ];

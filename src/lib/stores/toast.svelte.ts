@@ -9,11 +9,9 @@ export interface Toast {
 const toasts = $state<Toast[]>([]);
 let nextId = 0;
 
-export function getToasts(): Toast[] {
-	return toasts;
-}
+export const getToasts = (): Toast[] => toasts;
 
-export function addToast(type: ToastType, message: string): number {
+export const addToast = (type: ToastType, message: string): number => {
 	const id = nextId++;
 	toasts.push({ id, type, message });
 
@@ -22,9 +20,9 @@ export function addToast(type: ToastType, message: string): number {
 	}, 4000);
 
 	return id;
-}
+};
 
-export function removeToast(id: number): void {
+export const removeToast = (id: number): void => {
 	const index = toasts.findIndex((t) => t.id === id);
 	if (index !== -1) toasts.splice(index, 1);
-}
+};

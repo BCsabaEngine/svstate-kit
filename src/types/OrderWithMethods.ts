@@ -5,17 +5,12 @@ export type OrderWithMethods = Order & {
 	formatCurrency: (value: number) => string;
 };
 
-export function createOrderWithMethods(order: Order): OrderWithMethods {
-	return {
-		...order,
-		calculateTotals() {
-			this.totalAmount = this.products.reduce(
-				(sum, item) => sum + item.unitPrice * item.quantity,
-				0
-			);
-		},
-		formatCurrency(value: number) {
-			return `$${value.toFixed(2)}`;
-		}
-	};
-}
+export const createOrderWithMethods = (order: Order): OrderWithMethods => ({
+	...order,
+	calculateTotals() {
+		this.totalAmount = this.products.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+	},
+	formatCurrency(value: number) {
+		return `$${value.toFixed(2)}`;
+	}
+});

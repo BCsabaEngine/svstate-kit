@@ -9,15 +9,13 @@ export interface OrderErrors {
 	products: string;
 }
 
-export function orderValidator(source: Order): OrderErrors {
-	return {
-		customerId: numberValidator(source.customerId).required().positive().getError(),
-		orderReference: stringValidator(source.orderReference)
-			.required()
-			.minLength(3)
-			.maxLength(20)
-			.alphanumeric()
-			.getError(),
-		products: arrayValidator(source.products).required().minLength(1).getError()
-	};
-}
+export const orderValidator = (source: Order): OrderErrors => ({
+	customerId: numberValidator(source.customerId).required().positive().getError(),
+	orderReference: stringValidator(source.orderReference)
+		.required()
+		.minLength(3)
+		.maxLength(20)
+		.alphanumeric()
+		.getError(),
+	products: arrayValidator(source.products).required().minLength(1).getError()
+});
