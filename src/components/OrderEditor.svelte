@@ -60,15 +60,13 @@
 		animatedTotal.set(order.totalAmount);
 	});
 
-	function getProduct(productId: number): Product | undefined {
-		return products.find((p) => p.id === productId);
-	}
+	const getProduct = (productId: number): Product | undefined =>
+		products.find((p) => p.id === productId);
 
-	function getCustomer(customerId: number): Customer | undefined {
-		return customers.find((c) => c.id === customerId);
-	}
+	const getCustomer = (customerId: number): Customer | undefined =>
+		customers.find((c) => c.id === customerId);
 
-	function addProduct() {
+	const addProduct = () => {
 		if (selectedProductId === undefined) return;
 		const product = getProduct(selectedProductId);
 		if (!product) return;
@@ -84,28 +82,28 @@
 
 		recalculateTotal();
 		selectedProductId = undefined;
-	}
+	};
 
-	function removeProduct(index: number) {
+	const removeProduct = (index: number) => {
 		order.products.splice(index, 1);
 		recalculateTotal();
-	}
+	};
 
-	function updateQuantity(index: number, quantity: number) {
+	const updateQuantity = (index: number, quantity: number) => {
 		if (quantity < 1) quantity = 1;
 		order.products[index].quantity = quantity;
 		recalculateTotal();
-	}
+	};
 
-	function recalculateTotal() {
+	const recalculateTotal = () => {
 		order.totalAmount = calculateOrderTotal(order);
-	}
+	};
 
-	function formatCurrency(amount: number): string {
-		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-	}
+	const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-	async function handleSubmit() {
+	const formatCurrency = (amount: number): string => currencyFormatter.format(amount);
+
+	const handleSubmit = async () => {
 		if (!action) return;
 
 		isSubmitting = true;
@@ -117,7 +115,7 @@
 		} finally {
 			isSubmitting = false;
 		}
-	}
+	};
 
 	const availableProducts = $derived(
 		products.filter((p) => !order.products.some((op) => op.productId === p.id))
@@ -132,13 +130,9 @@
 			: hasCombinedErrors || submitting
 	);
 
-	function isFieldDirty(field: string): boolean {
-		return isDirtyByField?.[field] ?? false;
-	}
+	const isFieldDirty = (field: string): boolean => isDirtyByField?.[field] ?? false;
 
-	function isAsyncValidating(field: string): boolean {
-		return asyncValidating?.includes(field) ?? false;
-	}
+	const isAsyncValidating = (field: string): boolean => asyncValidating?.includes(field) ?? false;
 </script>
 
 <Card class="mx-auto mt-4 max-w-2xl p-4" size="xl">

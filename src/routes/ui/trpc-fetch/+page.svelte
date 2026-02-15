@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Card, Skeleton } from 'flowbite-svelte';
 	import { onMount } from 'svelte';
-	import { get } from 'svelte/store';
 	import { fade } from 'svelte/transition';
 	import { type AsyncErrors, createSvState, type DirtyFields } from 'svstate';
 
@@ -30,73 +29,73 @@
 	let actionInProgress = $state(false);
 	let actionError = $state<Error | undefined>();
 
-	onMount(async () => {
-		const [customersData, productsData, orderData] = await Promise.all([
-			apiClient.getCustomers.query(),
-			apiClient.getProducts.query(),
-			apiClient.getDefaultOrder.query({ customerId: 0, productId: 0 })
-		]);
+	onMount(() => {
+		let unsubs: (() => void)[] = [];
 
-		customers = customersData;
-		products = productsData;
-		const orderWithMethods = createOrderWithMethods(orderData);
+		(async () => {
+			const [customersData, productsData, orderData] = await Promise.all([
+				apiClient.getCustomers.query(),
+				apiClient.getProducts.query(),
+				apiClient.getDefaultOrder.query({ customerId: 0, productId: 0 })
+			]);
 
-		const result = createSvState(
-			orderWithMethods,
-			{
-				effect: ({ target, property }) => {
-					if (property !== 'totalAmount') target.calculateTotals();
-				},
-				action: async () => {
-					await apiClient.putOrder.mutate(result.data);
-				},
-				validator: (source) => orderValidator(source),
-				asyncValidator: {
-					customerId: async (value, _source, signal) => {
-						const result = await apiClient.validateCustomer.query(
-							{ customerId: value as number },
-							{ signal }
-						);
-						return result;
+			customers = customersData;
+			products = productsData;
+			const orderWithMethods = createOrderWithMethods(orderData);
+
+			const result = createSvState(
+				orderWithMethods,
+				{
+					effect: ({ target, property }) => {
+						if (property !== 'totalAmount') target.calculateTotals();
 					},
-					orderReference: async (value, _source, signal) => {
-						const result = await apiClient.validateOrderReference.query(
-							{ reference: value as string },
-							{ signal }
-						);
-						return result;
+					action: async () => {
+						await apiClient.putOrder.mutate(result.data);
+					},
+					validator: (source) => orderValidator(source),
+					asyncValidator: {
+						customerId: async (value, _source, signal) => {
+							const result = await apiClient.validateCustomer.query(
+								{ customerId: value as number },
+								{ signal }
+							);
+							return result;
+						},
+						orderReference: async (value, _source, signal) => {
+							const result = await apiClient.validateOrderReference.query(
+								{ reference: value as string },
+								{ signal }
+							);
+							return result;
+						}
 					}
+				},
+				{
+					debounceAsyncValidation: 500,
+					clearAsyncErrorsOnChange: true
 				}
-			},
-			{
-				debounceAsyncValidation: 500,
-				clearAsyncErrorsOnChange: true
-			}
-		);
+			);
 
-		orderState = result;
+			orderState = result;
 
-		errors = get(result.state.errors);
-		hasErrors = get(result.state.hasErrors);
-		asyncErrors = get(result.state.asyncErrors);
-		asyncValidating = get(result.state.asyncValidating);
-		hasCombinedErrors = get(result.state.hasCombinedErrors);
-		isDirty = get(result.state.isDirty);
-		isDirtyByField = get(result.state.isDirtyByField);
-		actionInProgress = get(result.state.actionInProgress);
-		actionError = get(result.state.actionError);
+			unsubs = [
+				result.state.errors.subscribe((v) => (errors = v)),
+				result.state.hasErrors.subscribe((v) => (hasErrors = v)),
+				result.state.asyncErrors.subscribe((v) => (asyncErrors = v)),
+				result.state.asyncValidating.subscribe((v) => (asyncValidating = v)),
+				result.state.hasCombinedErrors.subscribe((v) => (hasCombinedErrors = v)),
+				result.state.isDirty.subscribe((v) => (isDirty = v)),
+				result.state.isDirtyByField.subscribe((v) => (isDirtyByField = v)),
+				result.state.actionInProgress.subscribe((v) => (actionInProgress = v)),
+				result.state.actionError.subscribe((v) => (actionError = v))
+			];
 
-		result.state.errors.subscribe((v) => (errors = v));
-		result.state.hasErrors.subscribe((v) => (hasErrors = v));
-		result.state.asyncErrors.subscribe((v) => (asyncErrors = v));
-		result.state.asyncValidating.subscribe((v) => (asyncValidating = v));
-		result.state.hasCombinedErrors.subscribe((v) => (hasCombinedErrors = v));
-		result.state.isDirty.subscribe((v) => (isDirty = v));
-		result.state.isDirtyByField.subscribe((v) => (isDirtyByField = v));
-		result.state.actionInProgress.subscribe((v) => (actionInProgress = v));
-		result.state.actionError.subscribe((v) => (actionError = v));
+			loading = false;
+		})();
 
-		loading = false;
+		return () => {
+			for (const unsub of unsubs) unsub();
+		};
 	});
 </script>
 

@@ -30,12 +30,30 @@
 	let actionInProgress = $state(get(stores.actionInProgress));
 	let actionError = $state(get(stores.actionError));
 
-	$effect(() => stores.errors.subscribe((v) => (errors = v)));
-	$effect(() => stores.hasErrors.subscribe((v) => (hasErrors = v)));
-	$effect(() => stores.isDirty.subscribe((v) => (isDirty = v)));
-	$effect(() => stores.isDirtyByField.subscribe((v) => (isDirtyByField = v)));
-	$effect(() => stores.actionInProgress.subscribe((v) => (actionInProgress = v)));
-	$effect(() => stores.actionError.subscribe((v) => (actionError = v)));
+	$effect(() => {
+		const unsub = stores.errors.subscribe((v) => (errors = v));
+		return unsub;
+	});
+	$effect(() => {
+		const unsub = stores.hasErrors.subscribe((v) => (hasErrors = v));
+		return unsub;
+	});
+	$effect(() => {
+		const unsub = stores.isDirty.subscribe((v) => (isDirty = v));
+		return unsub;
+	});
+	$effect(() => {
+		const unsub = stores.isDirtyByField.subscribe((v) => (isDirtyByField = v));
+		return unsub;
+	});
+	$effect(() => {
+		const unsub = stores.actionInProgress.subscribe((v) => (actionInProgress = v));
+		return unsub;
+	});
+	$effect(() => {
+		const unsub = stores.actionError.subscribe((v) => (actionError = v));
+		return unsub;
+	});
 </script>
 
 <DemoHeader badge="tRPC Server" badgeColor="purple" title="tRPC Server" />

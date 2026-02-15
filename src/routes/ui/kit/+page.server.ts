@@ -4,11 +4,12 @@ import { getCustomers, getProducts } from '$lib/server/storageEmulator';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	return {
-		customers: await getCustomers(),
-		products: await getProducts(),
-		order: await createDefaultOrder(0, 0)
-	};
+	const [customers, products, order] = await Promise.all([
+		getCustomers(),
+		getProducts(),
+		createDefaultOrder(0, 0)
+	]);
+	return { customers, products, order };
 };
 
 export const actions: Actions = {

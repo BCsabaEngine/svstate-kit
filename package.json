@@ -48,9 +48,7 @@
 	"dependencies": {
 		"@trpc/client": "^11.10.0",
 		"@trpc/server": "^11.10.0",
-		"clsx": "^2.1.1",
 		"cookie": "^1.1.1",
-		"nanoid": "^5.1.6",
 		"superjson": "^2.2.6",
 		"svstate": "^1.4.0",
 		"zod": "^4.3.6"
