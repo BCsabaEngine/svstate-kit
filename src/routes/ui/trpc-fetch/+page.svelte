@@ -2,7 +2,14 @@
 	import { Card, Skeleton } from 'flowbite-svelte';
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { type AsyncErrors, createSvState, type DirtyFields } from 'svstate';
+	import {
+		type AsyncErrors,
+		createSvState,
+		devtoolsPlugin,
+		type DirtyFields,
+		persistPlugin,
+		undoRedoPlugin
+	} from 'svstate';
 
 	import DemoHeader from '$components/DemoHeader.svelte';
 	import OrderEditor from '$components/OrderEditor.svelte';
@@ -16,7 +23,11 @@
 	let orderState = $state<{
 		data: OrderWithMethods;
 		execute: () => Promise<void>;
+		rollback: () => void;
+		redo: () => void;
 	}>();
+	let canRedo = $state(false);
+	let isRestored = $state(false);
 	let loading = $state(true);
 
 	let errors = $state<OrderErrors | undefined>();
@@ -31,6 +42,7 @@
 
 	onMount(() => {
 		let unsubs: (() => void)[] = [];
+		let destroyState: (() => void) | undefined;
 
 		(async () => {
 			const [customersData, productsData, orderData] = await Promise.all([
@@ -42,6 +54,12 @@
 			customers = customersData;
 			products = productsData;
 			const orderWithMethods = createOrderWithMethods(orderData);
+
+			const persist = persistPlugin<OrderWithMethods>({
+				key: 'svstate-kit-order-draft',
+				throttle: 300
+			});
+			const undoRedo = undoRedoPlugin<OrderWithMethods>();
 
 			const result = createSvState(
 				orderWithMethods,
@@ -72,11 +90,14 @@
 				},
 				{
 					debounceAsyncValidation: 500,
-					clearAsyncErrorsOnChange: true
+					clearAsyncErrorsOnChange: true,
+					plugins: [devtoolsPlugin({ name: 'OrderForm' }), persist, undoRedo]
 				}
 			);
 
-			orderState = result;
+			isRestored = persist.isRestored();
+			destroyState = result.destroy.bind(result);
+			orderState = { ...result, redo: undoRedo.redo.bind(undoRedo) };
 
 			unsubs = [
 				result.state.errors.subscribe((v) => (errors = v)),
@@ -87,7 +108,8 @@
 				result.state.isDirty.subscribe((v) => (isDirty = v)),
 				result.state.isDirtyByField.subscribe((v) => (isDirtyByField = v)),
 				result.state.actionInProgress.subscribe((v) => (actionInProgress = v)),
-				result.state.actionError.subscribe((v) => (actionError = v))
+				result.state.actionError.subscribe((v) => (actionError = v)),
+				undoRedo.redoStack.subscribe((stack) => (canRedo = stack.length > 0))
 			];
 
 			loading = false;
@@ -95,6 +117,7 @@
 
 		return () => {
 			for (const unsub of unsubs) unsub();
+			destroyState?.();
 		};
 	});
 </script>
@@ -103,7 +126,7 @@
 
 {#if loading}
 	<Card class="mx-auto mt-4 max-w-2xl p-4" size="xl">
-		<div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4 dark:border-gray-700">
+		<div class="mb-6 flex items-center gap-3 border-b border-gray-200 pb-4">
 			<Skeleton class="h-12 w-12 rounded-full" />
 			<div class="flex-1">
 				<Skeleton class="mb-2 h-5 w-32" />
@@ -121,7 +144,7 @@
 			<Skeleton class="h-10 w-full" />
 		</div>
 
-		<div class="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
+		<div class="mb-6 rounded-lg bg-gray-50 p-4">
 			<Skeleton class="mb-2 h-4 w-24" />
 			<div class="flex gap-2">
 				<Skeleton class="h-10 flex-1" />
@@ -136,9 +159,7 @@
 			</div>
 			<div class="space-y-3">
 				{#each [0, 1] as index (index)}
-					<div
-						class="flex items-center gap-4 rounded-lg border border-gray-200 p-4 dark:border-gray-600"
-					>
+					<div class="flex items-center gap-4 rounded-lg border border-gray-200 p-4">
 						<div class="flex-1">
 							<Skeleton class="mb-2 h-4 w-32" />
 							<Skeleton class="h-3 w-20" />
@@ -150,7 +171,7 @@
 			</div>
 		</div>
 
-		<div class="border-t border-gray-200 pt-4 dark:border-gray-700">
+		<div class="border-t border-gray-200 pt-4">
 			<div class="mb-6 flex items-center justify-between">
 				<Skeleton class="h-5 w-28" />
 				<Skeleton class="h-8 w-24" />
@@ -166,14 +187,18 @@
 			{actionInProgress}
 			{asyncErrors}
 			{asyncValidating}
+			{canRedo}
 			{customers}
 			{errors}
 			{hasCombinedErrors}
 			{hasErrors}
 			{isDirty}
 			{isDirtyByField}
+			{isRestored}
 			order={orderState.data}
 			{products}
+			redo={orderState.redo}
+			rollback={orderState.rollback}
 		/>
 	</div>
 {/if}

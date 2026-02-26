@@ -1,6 +1,6 @@
 {
 	"name": "svstate-kit",
-	"version": "26.02.15",
+	"version": "26.02.26",
 	"type": "module",
 	"engines": {
 		"node": ">=22"
@@ -19,13 +19,14 @@
 		"npm:reinstall": "rm -rf ./node_modules && rm -f ./package-lock.json && npm i && npm i"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-node": "^5.5.2",
-		"@sveltejs/kit": "^2.50.2",
+		"@eslint/js": "^10.0.1",
+		"@sveltejs/adapter-node": "^5.5.4",
+		"@sveltejs/kit": "^2.53.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
-		"@tailwindcss/postcss": "^4.1.18",
+		"@tailwindcss/postcss": "^4.2.1",
 		"@tailwindcss/typography": "^0.5.19",
-		"@types/node": "^25.2.3",
-		"eslint": "^9.39.2",
+		"@types/node": "^25.3.2",
+		"eslint": "^10.0.2",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-simple-import-sort": "^12.1.1",
 		"eslint-plugin-svelte": "^3.15.0",
@@ -35,14 +36,14 @@
 		"flowbite-svelte-icons": "^3.1.0",
 		"globals": "^17.3.0",
 		"prettier": "^3.8.1",
-		"prettier-plugin-svelte": "^3.4.1",
+		"prettier-plugin-svelte": "^3.5.0",
 		"prettier-plugin-tailwindcss": "^0.7.2",
-		"svelte": "^5.50.2",
-		"svelte-check": "^4.3.6",
-		"tailwindcss": "^4.1.18",
-		"typescript": "^5.9.3",
+		"svelte": "^5.53.5",
+		"svelte-check": "^4.4.4",
+		"tailwindcss": "^4.2.1",
 		"tsx": "^4.21.0",
-		"typescript-eslint": "^8.55.0",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.56.1",
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
@@ -50,7 +51,7 @@
 		"@trpc/server": "^11.10.0",
 		"cookie": "^1.1.1",
 		"superjson": "^2.2.6",
-		"svstate": "^1.4.0",
+		"svstate": "^1.5.0",
 		"zod": "^4.3.6"
 	}
 }
