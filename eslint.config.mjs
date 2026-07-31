@@ -68,6 +68,9 @@ export default [
 			'unicorn/no-await-expression-member': 'off',
 			'unicorn/no-array-reduce': 'off',
 			'unicorn/prefer-global-this': 'off',
+			'unicorn/no-top-level-assignment-in-function': 'off',
+			'unicorn/max-nested-calls': 'off',
+			'unicorn/no-this-outside-of-class': 'off',
 			'no-alert': 'error',
 			'no-console': 'error',
 			'no-debugger': 'error'
