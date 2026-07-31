@@ -96,7 +96,7 @@ const result = createSvState(data.order, {
 
 ### 3. tRPC + svstate Full Showcase (`/ui/trpc-fetch`)
 
-The most complete demo. All data is fetched client-side, giving full control over loading states. Demonstrates async validators with debounce, and the v1.5.0 plugin system.
+The most complete demo. All data is fetched client-side, giving full control over loading states. Demonstrates async validators with debounce, validate-before-submit, plugin error handling, and the v2.0.0 plugin system.
 
 **How it works:**
 
@@ -131,9 +131,19 @@ const result = createSvState(
   {
     debounceAsyncValidation: 500,       // wait 500ms after last change
     clearAsyncErrorsOnChange: true,     // clear async error on next keystroke
-    plugins: [devtoolsPlugin({ name: 'OrderForm' }), persist, undoRedo]
+    plugins: [devtoolsPlugin({ name: 'OrderForm' }), persist, undoRedo],
+    onPluginError: (_error, pluginName, hook) => {
+      addToast('error', `Plugin "${pluginName}" failed in ${hook}`);
+    }
   }
 );
+
+const submitOrder = async () => {
+  const { hasErrors } = result.validate(); // force a sync validation pass before submit
+  if (hasErrors) return;
+
+  await result.execute();
+};
 
 persist.isRestored();              // true when draft was loaded from localStorage
 result.destroy();                  // cleanup on component destroy
@@ -215,7 +225,7 @@ Configured in `svelte.config.js`:
 ## Tech Stack
 
 - [SvelteKit](https://svelte.dev/docs/kit) with Svelte 5 (runes: `$state`, `$derived`, `$props`)
-- [svstate](https://www.npmjs.com/package/svstate) v1.5.0 — reactive state with validation and plugins
+- [svstate](https://www.npmjs.com/package/svstate) v2.0.0 — reactive state with validation and plugins
 - [tRPC](https://trpc.io/) v11 with [superjson](https://github.com/blitz-js/superjson)
 - [Tailwind CSS](https://tailwindcss.com/) v4 with [Flowbite-Svelte](https://flowbite-svelte.com/) components
 - [Zod](https://zod.dev/) v4 for schema validation and tRPC I/O types
