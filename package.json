@@ -51,7 +51,7 @@
 		"@trpc/server": "^11.18.0",
 		"cookie": "^1.1.1",
 		"superjson": "^2.2.6",
-		"svstate": "^1.5.6",
+		"svstate": "^2.0.0",
 		"zod": "^4.4.3"
 	}
 }
