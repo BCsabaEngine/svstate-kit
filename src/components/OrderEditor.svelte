@@ -126,7 +126,7 @@
 	};
 
 	const availableProducts = $derived(
-		products.filter((p) => !order.products.some((op) => op.productId === p.id))
+		products.filter((p) => order.products.every((op) => op.productId !== p.id))
 	);
 
 	const submitting = $derived(actionInProgress ?? isSubmitting);

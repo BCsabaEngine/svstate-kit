@@ -30,7 +30,7 @@ export default [
 	js.configs.recommended,
 	...tseslint.configs.recommended,
 	...svelte.configs.recommended,
-	unicorn.configs.all,
+	unicorn.configs.recommended,
 	prettierConfig,
 	{
 		plugins: {
