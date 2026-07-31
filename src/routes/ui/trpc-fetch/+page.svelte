@@ -13,6 +13,7 @@
 
 	import DemoHeader from '$components/DemoHeader.svelte';
 	import OrderEditor from '$components/OrderEditor.svelte';
+	import { addToast } from '$lib/stores/toast.svelte.js';
 	import { apiClient } from '$lib/trpc/client.js';
 	import { createOrderWithMethods, type OrderWithMethods } from '$types/OrderWithMethods.js';
 	import type { Customer, Product } from '$types/Schema';
@@ -91,13 +92,23 @@
 				{
 					debounceAsyncValidation: 500,
 					clearAsyncErrorsOnChange: true,
-					plugins: [devtoolsPlugin({ name: 'OrderForm' }), persist, undoRedo]
+					plugins: [devtoolsPlugin({ name: 'OrderForm' }), persist, undoRedo],
+					onPluginError: (_error, pluginName, hook) => {
+						addToast('error', `Plugin "${pluginName}" failed in ${hook}`);
+					}
 				}
 			);
 
+			const submitOrder = async () => {
+				const { hasErrors: syncHasErrors } = result.validate();
+				if (syncHasErrors) return;
+
+				await result.execute();
+			};
+
 			isRestored = persist.isRestored();
 			destroyState = result.destroy.bind(result);
-			orderState = { ...result, redo: undoRedo.redo.bind(undoRedo) };
+			orderState = { ...result, execute: submitOrder, redo: undoRedo.redo.bind(undoRedo) };
 
 			unsubs = [
 				result.state.errors.subscribe((v) => (errors = v)),

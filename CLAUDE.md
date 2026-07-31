@@ -56,7 +56,7 @@ Configured in `svelte.config.js`:
 
 ### svstate Integration
 
-The `svstate` library (v1.5.0) is demonstrated in `/ui/trpc-fetch` with the full feature set:
+The `svstate` library (v2.0.0) is demonstrated in `/ui/trpc-fetch` with the full feature set:
 
 ```typescript
 const persist = persistPlugin<OrderWithMethods>({
@@ -90,21 +90,31 @@ const result = createSvState(
 	{
 		debounceAsyncValidation: 500,
 		clearAsyncErrorsOnChange: true,
-		plugins: [devtoolsPlugin({ name: 'OrderForm' }), persist, undoRedo]
+		plugins: [devtoolsPlugin({ name: 'OrderForm' }), persist, undoRedo],
+		onPluginError: (_error, pluginName, hook) => {
+			addToast('error', `Plugin "${pluginName}" failed in ${hook}`);
+		}
 	}
 );
+
+const submitOrder = async () => {
+	const { hasErrors } = result.validate();
+	if (hasErrors) return;
+
+	await result.execute();
+};
 
 const isRestored = persist.isRestored();
 // result.destroy() — call on component unmount to clean up subscriptions
 // undoRedo.redo() / undoRedo.redoStack — undo/redo support
 ```
 
-Key svstate features demonstrated: effects, sync validators, async validators with debounce, dirty tracking, action state management, plugins (persist, undo/redo, devtools).
+Key svstate features demonstrated: effects, sync validators, async validators with debounce, validate-before-submit, dirty tracking, action state management, plugins (persist, undo/redo, devtools), plugin error handling (`onPluginError`).
 
 ## Tech Stack
 
 - SvelteKit with Svelte 5 (runes: `$state`, `$derived`, `$props`)
-- svstate v1.5.0 for reactive state management with validation
+- svstate v2.0.0 for reactive state management with validation
 - tRPC v11 with superjson
 - Tailwind CSS v4 with Flowbite-Svelte components
 - Zod v4 for schema validation
