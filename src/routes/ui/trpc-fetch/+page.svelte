@@ -42,6 +42,7 @@
 	let actionError = $state<Error | undefined>();
 
 	onMount(() => {
+		let isCancelled = false;
 		let unsubs: (() => void)[] = [];
 		let destroyState: (() => void) | undefined;
 
@@ -49,8 +50,9 @@
 			const [customersData, productsData, orderData] = await Promise.all([
 				apiClient.getCustomers.query(),
 				apiClient.getProducts.query(),
-				apiClient.getDefaultOrder.query({ customerId: 0, productId: 0 })
+				apiClient.getDefaultOrder.query({ customerId: 0 })
 			]);
+			if (isCancelled) return;
 
 			customers = customersData;
 			products = productsData;
@@ -98,6 +100,10 @@
 					}
 				}
 			);
+			if (isCancelled) {
+				result.destroy();
+				return;
+			}
 
 			const submitOrder = async () => {
 				const { hasErrors: syncHasErrors } = result.validate();
@@ -127,6 +133,7 @@
 		})();
 
 		return () => {
+			isCancelled = true;
 			for (const unsub of unsubs) unsub();
 			destroyState?.();
 		};

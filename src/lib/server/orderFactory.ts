@@ -1,17 +1,8 @@
 import type { Order } from '$types/Schema';
 
-export const createDefaultOrder = async (
-	customerId: number,
-	productId: number
-): Promise<Order> => ({
+export const createDefaultOrder = async (customerId: number): Promise<Order> => ({
 	customerId,
 	orderReference: '',
-	products: [
-		{
-			productId,
-			quantity: 1,
-			unitPrice: 0
-		}
-	],
+	products: [],
 	totalAmount: 0
 });

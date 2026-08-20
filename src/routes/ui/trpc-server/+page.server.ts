@@ -6,7 +6,7 @@ export const load: PageServerLoad = async () => {
 	const [customers, products, order] = await Promise.all([
 		trpcServerCaller.getCustomers(),
 		trpcServerCaller.getProducts(),
-		trpcServerCaller.getDefaultOrder({ customerId: 0, productId: 0 })
+		trpcServerCaller.getDefaultOrder({ customerId: 0 })
 	]);
 	return { customers, products, order };
 };

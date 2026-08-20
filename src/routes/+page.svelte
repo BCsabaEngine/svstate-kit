@@ -91,7 +91,7 @@
 
 		<!-- Footer Info -->
 		<div class="mt-16 text-center">
-			<p class="text-sm text-gray-500">Built with SvelteKit, tRPC, Flowbite, and svstate v2.0.0</p>
+			<p class="text-sm text-gray-500">Built with SvelteKit, tRPC, Flowbite, and svstate</p>
 		</div>
 	</div>
 </div>

@@ -9,15 +9,11 @@ export const trpcOrder = createApiRouter({
 	getDefaultOrder: apiProcedure
 		.input(
 			z.object({
-				customerId: z.number().int(),
-				productId: z.number().int()
+				customerId: z.number().int()
 			})
 		)
 		.output(OrderSchema)
-		.query(
-			async ({ input: { customerId, productId } }) =>
-				await createDefaultOrder(customerId, productId)
-		),
+		.query(async ({ input: { customerId } }) => await createDefaultOrder(customerId)),
 
 	putOrder: apiProcedure.input(OrderSchema).mutation(async ({ input }) => await putOrder(input))
 });

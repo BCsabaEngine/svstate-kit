@@ -23,7 +23,7 @@ export type OrderDetails = z.infer<typeof OrderDetailsSchema>;
 export const OrderSchema = z.object({
 	customerId: z.number().int(),
 	orderReference: z.string(),
-	products: z.array(OrderDetailsSchema).min(1),
+	products: z.array(OrderDetailsSchema),
 	totalAmount: z.number().min(0)
 });
 export type Order = z.infer<typeof OrderSchema>;

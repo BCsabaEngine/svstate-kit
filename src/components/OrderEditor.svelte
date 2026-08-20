@@ -166,7 +166,7 @@
 			</div>
 			<div class="flex gap-1">
 				{#if rollback}
-					<Button color="light" onclick={rollback} size="xs">Discard</Button>
+					<Button color="light" onclick={() => rollback()} size="xs">Discard</Button>
 				{/if}
 				{#if redo && canRedo}
 					<Button color="light" onclick={redo} size="xs">Reapply</Button>
@@ -375,6 +375,7 @@
 				{/if}
 			</Button>
 		{:else}
+			<input name="orderJson" type="hidden" value={JSON.stringify(order)} />
 			<Button
 				class="w-full active:scale-[0.98]"
 				color="blue"

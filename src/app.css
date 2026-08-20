@@ -2,6 +2,11 @@
 
 @config './../tailwind.config.ts';
 
+/* Tailwind v4 excludes node_modules from its automatic content scan, so
+   utility classes referenced only inside flowbite-svelte's component theme
+   files (e.g. Badge's padding classes) never get generated without this. */
+@source '../node_modules/flowbite-svelte/dist';
+
 .trimmed-content {
 	overflow: hidden;
 	text-overflow: ellipsis;
