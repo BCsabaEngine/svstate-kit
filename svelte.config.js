@@ -16,9 +16,7 @@ const config = {
 			polyfill: false
 		}),
 		alias: {
-			$api: './src/api',
 			$components: './src/components',
-			$routeparams: './src/types/routeparams',
 			$routes: './src/routes',
 			$types: './src/types'
 		}

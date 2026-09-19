@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
+	import { fromStore } from 'svelte/store';
 	import { createSvState } from 'svstate';
 
 	import DemoHeader from '$components/DemoHeader.svelte';
 	import OrderEditor from '$components/OrderEditor.svelte';
-	import { apiClient } from '$lib/trpc/client.js';
-	import { orderEffect } from '$types/Effect.js';
-	import { orderValidator } from '$types/Validators.js';
+	import { apiClient } from '$lib/trpc/client';
+	import { orderEffect } from '$types/Effect';
+	import { orderValidator } from '$types/Validators';
 
 	const { data } = $props();
 
@@ -14,7 +14,8 @@
 	const {
 		data: reactiveOrder,
 		execute,
-		state: stores
+		state: stores,
+		validate
 	} = createSvState(data.order, {
 		effect: ({ target, property }) => orderEffect(target, property),
 		action: async () => {
@@ -23,50 +24,30 @@
 		validator: (source) => orderValidator(source)
 	});
 
-	let errors = $state(get(stores.errors));
-	let hasErrors = $state(get(stores.hasErrors));
-	let isDirty = $state(get(stores.isDirty));
-	let isDirtyByField = $state(get(stores.isDirtyByField));
-	let actionInProgress = $state(get(stores.actionInProgress));
-	let actionError = $state(get(stores.actionError));
+	const errors = fromStore(stores.errors);
+	const hasErrors = fromStore(stores.hasErrors);
+	const isDirty = fromStore(stores.isDirty);
+	const isDirtyByField = fromStore(stores.isDirtyByField);
+	const actionInProgress = fromStore(stores.actionInProgress);
+	const actionError = fromStore(stores.actionError);
 
-	$effect(() => {
-		const unsub = stores.errors.subscribe((v) => (errors = v));
-		return unsub;
-	});
-	$effect(() => {
-		const unsub = stores.hasErrors.subscribe((v) => (hasErrors = v));
-		return unsub;
-	});
-	$effect(() => {
-		const unsub = stores.isDirty.subscribe((v) => (isDirty = v));
-		return unsub;
-	});
-	$effect(() => {
-		const unsub = stores.isDirtyByField.subscribe((v) => (isDirtyByField = v));
-		return unsub;
-	});
-	$effect(() => {
-		const unsub = stores.actionInProgress.subscribe((v) => (actionInProgress = v));
-		return unsub;
-	});
-	$effect(() => {
-		const unsub = stores.actionError.subscribe((v) => (actionError = v));
-		return unsub;
-	});
+	const submitOrder = async () => {
+		if (validate().hasErrors) return;
+		await execute();
+	};
 </script>
 
 <DemoHeader badge="tRPC Server" badgeColor="purple" title="tRPC Server" />
 
 <OrderEditor
-	action={execute}
-	{actionError}
-	{actionInProgress}
+	action={submitOrder}
+	actionError={actionError.current}
+	actionInProgress={actionInProgress.current}
 	customers={data.customers}
-	{errors}
-	{hasErrors}
-	{isDirty}
-	{isDirtyByField}
+	errors={errors.current}
+	hasErrors={hasErrors.current}
+	isDirty={isDirty.current}
+	isDirtyByField={isDirtyByField.current}
 	order={reactiveOrder}
 	products={data.products}
 />

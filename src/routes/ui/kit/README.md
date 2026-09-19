@@ -5,7 +5,9 @@
 ## How It Works
 
 - Data loaded via `+page.server.ts` load function
-- Form submissions handled by SvelteKit actions
+- Form submissions handled by SvelteKit actions (order posted as hidden `orderJson`)
+- Malformed input returns `fail(400)`; valid input goes through the shared server-side `submitOrder` (customer/product checks, catalog prices, recomputed total)
+- The page shows the action result (`form.error` / `form.success`)
 - Full page reload on submit
 
 ## Code Pattern
@@ -16,14 +18,18 @@ export const load: PageServerLoad = async () => {
 	return {
 		customers: await getCustomers(),
 		products: await getProducts(),
-		order: await createDefaultOrder(0, 0)
+		order: await createDefaultOrder(0)
 	};
 };
 
 export const actions: Actions = {
 	default: async (event) => {
-		const formData = await event.request.formData();
-		// Process form...
+		const parsed = parseOrderJson((await event.request.formData()).get('orderJson'));
+		if (!parsed?.success) return fail(400, { error: 'Invalid order data' });
+
+		const error = await submitOrder(parsed.data);
+		if (error) return fail(400, { error });
+		return { success: true };
 	}
 };
 ```
@@ -31,5 +37,5 @@ export const actions: Actions = {
 ## Best For
 
 - Simple CRUD applications
-- Progressive enhancement (works without JS)
+- Native form posts without client-side API plumbing
 - SEO-critical pages

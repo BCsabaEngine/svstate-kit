@@ -21,3 +21,16 @@
 	border-color: lightgray !important;
 	--tw-ring-shadow: 0 0 #000 !important;
 }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+}

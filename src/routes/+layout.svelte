@@ -2,9 +2,8 @@
 	import '../app.css';
 
 	import type { Snippet } from 'svelte';
-	import { fade } from 'svelte/transition';
 
-	import { page } from '$app/stores';
+	import { onNavigate } from '$app/navigation';
 	import ToastContainer from '$components/ToastContainer.svelte';
 
 	interface Properties {
@@ -12,12 +11,20 @@
 	}
 
 	const { children }: Properties = $props();
+
+	// Cross-fade old/new page via the View Transitions API (no double-rendered pages, no blank flash)
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 </script>
 
 <ToastContainer />
 
-{#key $page.url.pathname}
-	<div in:fade={{ duration: 200, delay: 100 }} out:fade={{ duration: 100 }}>
-		{@render children()}
-	</div>
-{/key}
+{@render children()}

@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
+	import { fromStore } from 'svelte/store';
 	import { createSvState } from 'svstate';
 
 	import DemoHeader from '$components/DemoHeader.svelte';
 	import OrderEditor from '$components/OrderEditor.svelte';
-	import { orderEffect } from '$types/Effect.js';
-	import { orderValidator } from '$types/Validators.js';
+	import { orderEffect } from '$types/Effect';
+	import { orderValidator } from '$types/Validators';
 
-	const { data } = $props();
+	const { data, form } = $props();
 
 	// svelte-ignore state_referenced_locally
 	const { data: reactiveOrder, state: stores } = createSvState(data.order, {
@@ -15,20 +15,24 @@
 		validator: (source) => orderValidator(source)
 	});
 
-	let errors = $state(get(stores.errors));
-	let hasErrors = $state(get(stores.hasErrors));
-
-	$effect(() => stores.errors.subscribe((v) => (errors = v)));
-	$effect(() => stores.hasErrors.subscribe((v) => (hasErrors = v)));
+	const errors = fromStore(stores.errors);
+	const hasErrors = fromStore(stores.hasErrors);
 </script>
 
 <DemoHeader badge="SvelteKit" badgeColor="green" title="SvelteKit Default" />
 
 <form method="POST">
+	{#if form?.error}
+		<p class="mx-auto mt-4 max-w-2xl rounded-lg bg-red-50 p-3 text-sm text-red-700">{form.error}</p>
+	{:else if form?.success}
+		<p class="mx-auto mt-4 max-w-2xl rounded-lg bg-green-50 p-3 text-sm text-green-700">
+			Order submitted successfully!
+		</p>
+	{/if}
 	<OrderEditor
 		customers={data.customers}
-		{errors}
-		{hasErrors}
+		errors={errors.current}
+		hasErrors={hasErrors.current}
 		order={reactiveOrder}
 		products={data.products}
 	/>

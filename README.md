@@ -31,10 +31,11 @@ Open [http://localhost:5173](http://localhost:5173) to see the demo selector.
 
 ```bash
 npm run build        # Production build
+npm run test         # Unit tests (vitest)
 npm run ts:check     # TypeScript type checking (svelte-check)
 npm run lint:fix     # Fix ESLint issues
 npm run format:fix   # Fix Prettier formatting
-npm run all          # Format + lint + type-check + build (run before committing)
+npm run all          # Format + lint + type-check + build + test (run before committing)
 ```
 
 ---
@@ -43,14 +44,14 @@ npm run all          # Format + lint + type-check + build (run before committing
 
 ### 1. SvelteKit Native (`/ui/kit`)
 
-The simplest pattern. Uses classic SvelteKit form actions — no JavaScript required for the submit, progressive enhancement out of the box.
+The simplest pattern. Uses classic SvelteKit form actions: the order is serialized into a hidden `orderJson` field and posted as a native form submit (full-page reload).
 
 **How it works:**
 
-- Data is loaded in `+page.server.ts` via a server-side tRPC caller (no network round-trip)
+- Data is loaded in `+page.server.ts` straight from the storage emulator (no tRPC involved)
 - `createSvState` wraps the order and runs sync validators on every change
-- The form submits to a SvelteKit action (full-page POST)
-- Validation errors are shown in-line
+- The form submits to a SvelteKit action, which parses `orderJson` (malformed input → `fail(400)`) and hands it to the shared server-side `submitOrder`
+- Client validation errors are shown in-line; the server's verdict (success or rejection reason) is shown above the form
 
 ```typescript
 // +page.svelte
@@ -58,7 +59,7 @@ const result = createSvState(data.order, {
 	effect: ({ target, property }) => orderEffect(target, property),
 	validator: (source) => orderValidator(source)
 });
-// result.state.errors, result.state.hasErrors — reactive stores
+// state.errors, result.state.hasErrors — reactive stores
 ```
 
 **Best for:** Progressive-enhancement forms, server-rendered pages, simple CRUD.
@@ -75,19 +76,33 @@ Introduces client-side tRPC mutations and `svstate` action state management. Dat
 - `createSvState` adds an `action` callback that calls `apiClient.putOrder.mutate()`
 - `isDirty` and `isDirtyByField` track which fields have changed from the initial value
 - `actionInProgress` and `actionError` reflect the mutation state
+- The submit handler calls `validate()` first and only runs the action when there are no errors
 
 ```typescript
-const result = createSvState(data.order, {
+const {
+	data: reactiveOrder,
+	execute,
+	state,
+	validate
+} = createSvState(data.order, {
 	effect: ({ target, property }) => orderEffect(target, property),
 	action: async () => {
 		await apiClient.putOrder.mutate(reactiveOrder);
 	},
 	validator: (source) => orderValidator(source)
 });
-// result.state.isDirty — true when any field differs from initial
-// result.state.isDirtyByField — { customerId: true, orderReference: false, ... }
-// result.state.actionInProgress — true while mutation runs
-// result.state.actionError — Error | undefined
+
+const submitOrder = async () => {
+	if (validate().hasErrors) return;
+	await execute();
+};
+
+// Stores become reactive values with fromStore (svelte/store):
+const isDirty = fromStore(state.isDirty); // isDirty.current
+// state.isDirty — true when any field differs from initial
+// state.isDirtyByField — { customerId: true, orderReference: false, ... }
+// state.actionInProgress — true while mutation runs
+// state.actionError — Error | undefined
 ```
 
 **Best for:** SvelteKit apps with tRPC, where you want to keep the server load function but use AJAX for saves.
@@ -96,7 +111,7 @@ const result = createSvState(data.order, {
 
 ### 3. tRPC + svstate Full Showcase (`/ui/trpc-fetch`)
 
-The most complete demo. All data is fetched client-side, giving full control over loading states. Demonstrates async validators with debounce, validate-before-submit, plugin error handling, and the v2.0.0 plugin system.
+The most complete demo. All data is fetched client-side, giving full control over loading states. Demonstrates async validators with debounce, validate-before-submit, plugin error handling, and the v2.1.0 plugin system.
 
 **How it works:**
 
@@ -157,7 +172,7 @@ undoRedo.redoStack.subscribe(...); // subscribe to redo history depth
 
 ## Domain Model
 
-The demo uses a simple order management domain: a `Customer` places an `Order` with multiple `OrderDetails` line items, each referencing a `Product`. `OrderWithMethods` extends `Order` with a `calculateTotals()` method that sums `unitPrice × quantity` across all line items. The `totalAmount` field is kept in sync automatically via the `effect` callback.
+The demo uses a simple order management domain: a `Customer` places an `Order` with multiple `OrderDetails` line items, each referencing a `Product`. `OrderWithMethods` extends `Order` with a `calculateTotals()` method that sums `unitPrice × quantity` across all line items (it shares `calculateOrderTotal` with `orderEffect`). The `totalAmount` field is kept in sync automatically via the `effect` callback — the editor component never recalculates it by hand.
 
 ---
 
@@ -191,6 +206,36 @@ export function orderValidator(source: Order): OrderErrors {
 
 Async validators run server-side checks after the debounce window. Return empty string for valid, or an error message string. The mock backend rejects customer ID `3` (inactive) and order reference `"ORD001"` (already taken).
 
+### Server-side rules
+
+Client validation is a convenience, not a guarantee. Both submit paths (tRPC `putOrder` and the kit form action) go through `submitOrder` in `src/lib/server/storageEmulator.ts`, which re-checks the order and never trusts client-supplied money:
+
+- the customer must exist, and the order needs at least one product
+- every `productId` must exist in the catalog; **prices come from the catalog** and `totalAmount` is **recomputed** on the server
+- the same customer/reference checks as the async validators are enforced (customer `3` and `"ORD001"` are rejected)
+
+It returns an error message (`''` on success); tRPC maps it to a `BAD_REQUEST` error and the kit action to `fail(400)`.
+
+---
+
+## Testing
+
+Unit tests use [Vitest](https://vitest.dev/) and live next to the code as `*.test.ts`:
+
+| File                                     | Covers                                                   |
+| ---------------------------------------- | -------------------------------------------------------- |
+| `src/types/Effect.test.ts`               | `calculateOrderTotal`, `orderEffect`                     |
+| `src/types/OrderWithMethods.test.ts`     | `calculateTotals`                                        |
+| `src/types/Validators.test.ts`           | `orderValidator`                                         |
+| `src/lib/server/storageEmulator.test.ts` | `submitOrder` rules, catalog price / recomputed total    |
+| `src/trpcRouter/order.test.ts`           | `putOrder` wiring (`BAD_REQUEST` mapping) via the caller |
+
+```bash
+npm run test
+```
+
+Components and pages are not covered (no jsdom / testing-library setup).
+
 ---
 
 ## Architecture
@@ -200,6 +245,7 @@ Async validators run server-side checks after the debounce window. Return empty 
 - `src/lib/trpc/init.ts` — tRPC init with superjson; exports `createApiRouter`, `apiProcedure`
 - `src/trpcRouter/` — individual routers: `masterData`, `order`, `validation`
 - `src/trpcRouter/index.ts` — merges all routers into a single `router` export
+- `src/lib/server/` — `storageEmulator.ts` (in-memory backend, `submitOrder`) and `orderFactory.ts`
 - `src/lib/trpc/client.ts` — browser-side `apiClient` (HTTP to `/trpc`)
 - `src/lib/trpc/serverCaller.ts` — `trpcServerCaller` (in-process, no HTTP round-trip)
 - `src/lib/trpc/server.ts` — `createTRPCHandle` for SvelteKit hooks
@@ -209,26 +255,25 @@ Async validators run server-side checks after the debounce window. Return empty 
 
 ### Path Aliases
 
-Configured in `svelte.config.js`:
+`$lib` is built into SvelteKit; the rest are configured in `svelte.config.js`:
 
-| Alias          | Path                      |
-| -------------- | ------------------------- |
-| `$api`         | `./src/api`               |
-| `$components`  | `./src/components`        |
-| `$lib`         | `./src/lib`               |
-| `$routeparams` | `./src/types/routeparams` |
-| `$routes`      | `./src/routes`            |
-| `$types`       | `./src/types`             |
+| Alias         | Path               |
+| ------------- | ------------------ |
+| `$components` | `./src/components` |
+| `$lib`        | `./src/lib`        |
+| `$routes`     | `./src/routes`     |
+| `$types`      | `./src/types`      |
 
 ---
 
 ## Tech Stack
 
 - [SvelteKit](https://svelte.dev/docs/kit) with Svelte 5 (runes: `$state`, `$derived`, `$props`)
-- [svstate](https://www.npmjs.com/package/svstate) v2.0.0 — reactive state with validation and plugins
+- [svstate](https://www.npmjs.com/package/svstate) v2.1.0 — reactive state with validation and plugins
 - [tRPC](https://trpc.io/) v11 with [superjson](https://github.com/blitz-js/superjson)
 - [Tailwind CSS](https://tailwindcss.com/) v4 with [Flowbite-Svelte](https://flowbite-svelte.com/) components
 - [Zod](https://zod.dev/) v4 for schema validation and tRPC I/O types
+- [Vitest](https://vitest.dev/) for unit tests
 
 ---
 

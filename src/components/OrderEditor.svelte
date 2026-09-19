@@ -9,7 +9,6 @@
 	import type { AsyncErrors, DirtyFields } from 'svstate';
 
 	import { addToast } from '$lib/stores/toast.svelte.js';
-	import { calculateOrderTotal } from '$types/Effect.js';
 	import type { Customer, Order, Product } from '$types/Schema';
 	import type { OrderErrors } from '$types/Validators';
 
@@ -88,23 +87,16 @@
 				quantity: 1
 			});
 
-		recalculateTotal();
 		selectedProductId = undefined;
 	};
 
 	const removeProduct = (index: number) => {
 		order.products.splice(index, 1);
-		recalculateTotal();
 	};
 
 	const updateQuantity = (index: number, quantity: number) => {
 		if (quantity < 1) quantity = 1;
 		order.products[index].quantity = quantity;
-		recalculateTotal();
-	};
-
-	const recalculateTotal = () => {
-		order.totalAmount = calculateOrderTotal(order);
 	};
 
 	const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });

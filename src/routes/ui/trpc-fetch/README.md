@@ -9,7 +9,11 @@
 - Side effects auto-recalculate derived values
 - Sync validation forced via `validate()` before the action runs
 - Plugin failures (persist, undo/redo, devtools) reported via `onPluginError`
-- One-click save via action callback
+- Async validators (customer, order reference) with debounce and `AbortSignal`
+- Draft persistence and undo/redo via plugins
+- One-click save via action callback; the server re-validates and recomputes prices/total in `putOrder`
+- The loading skeleton lives in `OrderSkeleton.svelte`
+- State is created inside `onMount`, so store subscriptions are wired manually (`fromStore` is used on the other two pages)
 
 ## Code Pattern
 

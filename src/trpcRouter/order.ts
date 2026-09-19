@@ -1,7 +1,8 @@
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { createDefaultOrder } from '$lib/server/orderFactory';
-import { putOrder } from '$lib/server/storageEmulator';
+import { submitOrder } from '$lib/server/storageEmulator';
 import { apiProcedure, createApiRouter } from '$lib/trpc/init';
 import { OrderSchema } from '$types/Schema';
 
@@ -15,5 +16,8 @@ export const trpcOrder = createApiRouter({
 		.output(OrderSchema)
 		.query(async ({ input: { customerId } }) => await createDefaultOrder(customerId)),
 
-	putOrder: apiProcedure.input(OrderSchema).mutation(async ({ input }) => await putOrder(input))
+	putOrder: apiProcedure.input(OrderSchema).mutation(async ({ input }) => {
+		const message = await submitOrder(input);
+		if (message) throw new TRPCError({ code: 'BAD_REQUEST', message });
+	})
 });

@@ -15,7 +15,8 @@ This is a demo project showcasing the `svstate` npm package - a state management
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
-npm run all          # Format, lint, type-check, and build (run before committing)
+npm run all          # Format, lint, type-check, build, and test (run before committing)
+npm run test         # Run unit tests (vitest)
 npm run ts:check     # TypeScript type checking with svelte-check
 npm run lint:fix     # Fix ESLint issues
 npm run format:fix   # Fix Prettier formatting
@@ -36,14 +37,17 @@ The tRPC integration follows this structure:
 - `src/lib/trpc/server.ts` - Custom `createTRPCHandle` for SvelteKit hooks integration
 - `src/hooks.server.ts` - Mounts tRPC at `/trpc` endpoint
 
+### Server-side rules
+
+- `src/lib/server/storageEmulator.ts` - In-memory backend. `submitOrder(order)` is the single server-side entry point used by both tRPC `putOrder` and the kit form action: it validates customer/products/reference, takes prices from the catalog and recomputes `totalAmount` (never trust client prices). Returns an error message, `''` on success
+- The `effect` recalculates totals; `OrderEditor.svelte` must not recalculate them manually
+
 ### Path Aliases
 
-Configured in `svelte.config.js`:
+`$lib` is built into SvelteKit; the others are configured in `svelte.config.js`:
 
-- `$api` → `./src/api`
 - `$components` → `./src/components`
 - `$lib` → `./src/lib`
-- `$routeparams` → `./src/types/routeparams`
 - `$routes` → `./src/routes`
 - `$types` → `./src/types`
 
@@ -56,7 +60,7 @@ Configured in `svelte.config.js`:
 
 ### svstate Integration
 
-The `svstate` library (v2.0.0) is demonstrated in `/ui/trpc-fetch` with the full feature set:
+The `svstate` library (v2.1.0) is demonstrated in `/ui/trpc-fetch` with the full feature set:
 
 ```typescript
 const persist = persistPlugin<OrderWithMethods>({
@@ -111,13 +115,20 @@ const isRestored = persist.isRestored();
 
 Key svstate features demonstrated: effects, sync validators, async validators with debounce, validate-before-submit, dirty tracking, action state management, plugins (persist, undo/redo, devtools), plugin error handling (`onPluginError`).
 
+## Testing
+
+- Vitest, `npm run test`; tests are `src/**/*.test.ts`, next to the code, importing `describe`/`it`/`expect` from `vitest` (no globals)
+- Cover domain logic and server rules (`Effect`, `OrderWithMethods`, `Validators`, `submitOrder`, tRPC `putOrder`); no component tests
+- `submitOrder` runs async validators that sleep 600-800 ms: use `vi.useFakeTimers()` + `vi.runAllTimersAsync()`
+
 ## Tech Stack
 
 - SvelteKit with Svelte 5 (runes: `$state`, `$derived`, `$props`)
-- svstate v2.0.0 for reactive state management with validation
+- svstate v2.1.0 for reactive state management with validation
 - tRPC v11 with superjson
 - Tailwind CSS v4 with Flowbite-Svelte components
 - Zod v4 for schema validation
+- Vitest for unit tests
 - Node.js adapter for deployment
 - Node.js >= 22 required
 
